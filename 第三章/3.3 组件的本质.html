@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3.3 组件的本质</title>
+</head>
+<body>
+<script>
+    /**
+     * 组件的本质：组件就是一组DOM元素的封装。
+     * MyComponent
+     * @type {{return: {children: string, tag: string, props: {onClick: MyComponent.return.props.onClick}}}}
+     */
+    const MyComponent = {
+        render() {
+            return {
+                tag: 'div',
+                props: {
+                    onClick: function () {
+                        console.log('click')
+                    }
+                },
+                children: 'click me'
+            }
+        }
+    }
+    // 虚拟DOM来储存组件
+    const vnode = {
+        tag: 'div',
+        children: [{
+            tag: MyComponent,
+        }, {
+            tag: 'span',
+            children: 'hello world 1'
+        },{
+            tag: 'div',
+            children: [{
+                tag: 'span',
+                children: 'hello world 2'
+            },{
+                tag:MyComponent,
+            }]
+        }
+        ]
+    }
+
+    function renderer(vnode, container) {
+        // 如果是标签
+        if (typeof vnode.tag === 'string') {
+            mountElement(vnode, container)
+            // 如果是组件
+        } else if (typeof vnode.tag === 'object') {
+            mountComponent(vnode, container)
+        }
+    }
+
+    function mountElement(vnode, container) {
+        const el = document.createElement(vnode.tag)
+        // 绑定事件
+        for (const key in vnode.props) {
+            if (/^on/.test(key)) {
+                el.addEventListener(key.slice(2).toLowerCase(), vnode.props[key])
+            }
+        }
+        // 如果是文本节点
+        if (typeof vnode.children === 'string') {
+            const textNode = document.createTextNode(vnode.children)
+            el.appendChild(textNode)
+        // 如果有子节点
+        } else if (Array.isArray(vnode.children)) {
+            vnode.children.forEach(item => {
+                // 调用renderer函数渲染子节点，使用当前元素el 作为容器
+                renderer(item, el)
+            })
+        }
+        container.appendChild(el)
+    }
+
+    /**
+     * 渲染组件
+     * @param vnode
+     * @param container
+     */
+    function mountComponent(vnode, container) {
+        // 调用组件函数,获取组件的虚拟DOM
+        const subTree = vnode.tag.render()
+        // 递归渲染
+        renderer(subTree, container)
+    }
+
+    renderer(vnode, document.body)
+
+</script>
+</body>
+</html>
