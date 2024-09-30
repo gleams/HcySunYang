@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>1.4运行时和编译时</title>
+</head>
+<body>
+
+</body>
+<script>
+    const obj = {
+        tag: 'div',
+        children: [{
+            tag: 'span', children: 'hello world'
+        }]
+    }
+
+    /**
+     * 渲染
+     * @param obj
+     * @param root
+     * @constructor
+     */
+    function Render(obj,root) {
+        const el = document.createElement(obj.tag)
+        if (typeof obj.children === 'string') {
+            const textNode = document.createTextNode(obj.children)
+            el.appendChild(textNode)
+        } else if(obj.children instanceof Array){
+            obj.children.forEach(item=>{
+                Render(item,el)
+            })
+        }
+        root.appendChild(el)
+    }
+    Render(obj,document.body)
+</script>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>1.4.2 运行时+编译时</title>
+</head>
+<body>
+<script>
+    /**
+     * 渲染
+     * @param obj
+     * @param root
+     * @constructor
+     */
+    function Render(obj,root) {
+        let  el = '';
+
+        // 判断是否是文本节点
+        if(obj.tag === '#text'){
+            el = document.createTextNode(obj.content)
+        }else{
+            el = document.createElement(obj.tag)
+        }
+
+        if (typeof obj.children === 'string') {
+            const textNode = document.createTextNode(obj.children)
+            el.appendChild(textNode)
+        } else if(obj.children instanceof Array){
+            obj.children.forEach(item=>{
+                Render(item,el)
+            })
+        }
+        root.appendChild(el)
+    }
+    /**
+     * 把html字符串转换成对象,目前只支持最简单的情况，没有转换标签属性
+     * @param htmlString
+     * @returns {{children: *[], tag: string}|null}
+     * @constructor
+     */
+    function Compile(htmlString) {
+        // 使用DOMParser将HTML字符串解析为DOM节点
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlString, 'text/html');
+
+        // 获取解析后的body元素（通常HTML字符串的根元素）
+        const body = doc.body.firstChild;
+
+        // 递归函数，将DOM节点转换为对象结构
+        function nodeToObj(node) {
+            if (!node) return null;
+
+            let obj = {
+                tag: node.nodeName.toLowerCase(),
+                children: []
+            };
+
+            // 遍历子节点
+            node.childNodes.forEach(child => {
+                if (child.nodeType === 1) { // 只处理元素节点
+                    obj.children.push(nodeToObj(child));
+                } else if (child.nodeType === 3 && child.textContent.trim() !== '') {
+                    // 处理文本节点，如果文本内容非空，则作为文本子节点
+                    obj.children.push({
+                        tag: '#text',
+                        content: child.textContent.trim()
+                    });
+                }
+            });
+            return obj;
+        }
+        // 开始解析
+        const result = nodeToObj(body);
+        // 如果没有子节点且body是空的，返回null或处理为其他形式
+        if (result.children.length === 0 && result.tag === 'body') {
+            return null; // 或者根据需要返回其他值
+        }
+
+        return result;
+    }
+    const html = `
+        <div>
+            <div>
+                <h2>一段文字！</h2>
+                <p>p标记</p>
+            </div>
+            <span>hello world!</span>
+        </div>
+        `
+    const obj = Compile(html)
+    Render(obj,document.body)
+</script>
+</body>
+</html>
