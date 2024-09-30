@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3.2初识渲染器</title>
+</head>
+<body>
+<script>
+    /**
+     * 虚拟节点
+     */
+    const vnode = {
+        tag: 'div',
+        children: [{
+            tag: 'span',
+            props: {
+                onclick: function () {
+                    alert('span click')
+                }
+            },
+            children: 'hello world'
+        }]
+    }
+
+    /**
+     * 渲染
+     * @param vnode
+     * @param container
+     */
+    function renderer(vnode, container) {
+        // 创建元素
+        const el = document.createElement(vnode.tag)
+        // 添加事件
+        for (const key in vnode.props) {
+            if (/^on/.test(key)) {
+                el.addEventListener(key.slice(2).toLowerCase(), vnode.props[key])
+            }
+        }
+        // 添加文本节点
+        if (typeof vnode.children === 'string') {
+            const textNode = document.createTextNode(vnode.children)
+            el.appendChild(textNode)
+        }else if(Array.isArray(vnode.children)){
+            vnode.children.forEach(item=>{
+                renderer(item,el)
+            })
+        }
+        container.appendChild(el)
+    }
+    renderer(vnode, document.body)
+</script>
+</body>
+</html>
