@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3.4模板的工作原理</title>
+</head>
+<body>
+<script>
+    // 这是一个简化的模板编译器示例
+
+    // 简化的 h 函数，用于创建虚拟节点
+    function h(type, props = {}, children = []) {
+        return { type, props, children };
+    }
+
+    // 编译模板字符串，并返回渲染函数
+    function compileTemplate(template) {
+        // 使用正则表达式匹配插值表达式
+        const interpolationRegex = /\{\{([^}]+)\}\}/g;
+        let index = 0; // 用于生成唯一标识符的索引
+        const idMap = {}; // 存储插值表达式和唯一标识符的映射
+
+        // 替换模板中的插值表达式为占位符
+        const parsedTemplate = template.replace(interpolationRegex, (match, expr) => {
+            const id = `__vue_interp_${index++}`;
+            idMap[id] = expr; // 存储表达式和标识符的映射
+            return id; // 返回占位符
+        });
+
+        // 构建一个渲染函数，该函数接收上下文对象并返回虚拟节点
+        return function render(context) {
+            // 遍历 idMap，并将占位符替换为实际的表达式计算结果
+            const replacedChildren = parsedTemplate.split('').map(char => {
+                if (idMap.hasOwnProperty(char)) {
+                    // 如果是占位符，则计算表达式的值
+                    const exprValue = eval(`context.${idMap[char]}`); // 注意：eval 用于演示目的，实际中应避免使用
+                    return h('span', {}, [exprValue]); // 将表达式值包装在一个 span 元素中（可选）
+                } else {
+                    // 如果不是占位符，则直接返回字符
+                    return char;
+                }
+            }).join('');
+
+            // 由于我们的 parsedTemplate 实际上是一个字符串，而不是虚拟节点树，
+            // 我们需要将其转换为虚拟节点。在这个简化的例子中，我们假设整个模板
+            // 是一个单一的 div 元素，并将替换后的内容作为其子节点。
+            // 在真实场景中，解析器会构建更复杂的虚拟节点树。
+            const vnode = h('div', {}, [h('span', {}, [replacedChildren])]);
+            // 注意：这里的处理非常粗糙，仅用于演示。在实际中，你需要更精细地处理文本节点和元素节点。
+
+            return vnode; // 返回虚拟节点
+        };
+    }
+
+    // 示例使用
+    const templateString = '<div>Hello, {{ name }}!</div>';
+    const renderFunction = compileTemplate(templateString);
+
+    // 创建一个上下文对象，包含模板中使用的数据
+    const context = { name: 'Vue3' };
+
+    // 使用渲染函数生成虚拟节点
+    const vnode = renderFunction(context);
+
+    // 打印虚拟节点（在实际应用中，你会将这个虚拟节点传递给 Vue 的渲染器来更新 DOM）
+    console.log(JSON.stringify(vnode, null, 2));
+</script>
+</body>
+</html>

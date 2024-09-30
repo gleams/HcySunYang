@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>4.2响应式数据的基本实现</title>
+</head>
+<body>
+<script>
+    // 原始数据
+    const data = {}
+    data.text = 'hello world'
+
+    // 存储副作用函数的桶
+    const bucket = new Set()
+
+    // 采用proxy实现响应式数据
+    const obj = new Proxy(data,{
+        // 拦截读取操作
+        get(target,key){
+            // 将副作用函数添加到桶中
+            console.log('get',key)
+            bucket.add(effect)
+            return target[key]
+        },
+        // 拦截设置操作
+        set(target,key,newValue){
+            target[key] = newValue
+            // 副作用函数从桶里取出并执行
+            bucket.forEach(fn=>fn())
+            return true
+        }
+    })
+    function effect(){
+        // 读取obj.text，执行get拦截器，将副作用函数添加到桶中
+        document.body.innerHTML = obj.text
+    }
+
+    effect()
+    setTimeout(()=>{
+        console.log('3s后修改数据')
+        // 修改数据,执行set拦截器，将副作用函数从桶中取出并执行
+        obj.text = 'hello vue3'
+    },3000)
+
+</script>
+</body>
+</html>
